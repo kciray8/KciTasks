@@ -1,0 +1,158 @@
+###name=Transaction management - Atomicity (XML)
+###full = TransactionsXML.zip
+=Create a Java project from scratch using your favorite IDE
++<<MainEmpty
+=Build a foundation for a hybrid Spring Boot application (Annotations + XML)
++<<spring-boot-starter-web
++<<Main.java
++<<beans.xml
+=Create a datasource with ##jdbc## namespace based on H2 database
++pom.xml
+<dependency>
+    <groupId>org.springframework</groupId>
+    <artifactId>spring-jdbc</artifactId>
+    <version>5.0.2.RELEASE</version>
+</dependency>
++pom.xml
+<dependency>
+    <groupId>com.h2database</groupId>
+    <artifactId>h2</artifactId>
+    <version>1.4.196</version>
+</dependency>
++beans.xml
+<jdbc:embedded-database id="dataSource" type="H2" />
+=Create table ##Product## that has ##name (String)## and ##price (Double)## columns (SQL)
+==Save DDL statement to some file
++createTable.sql
+CREATE TABLE Product(name VARCHAR(100), price DOUBLE);
+==Init the database with the file using ##jdbc## namespace
++beans.xml
+<jdbc:embedded-database id="dataSource" type="H2">
+    <jdbc:script location="classpath:createTable.sql" />
+</jdbc:embedded-database>
+=Create a DataSource-based transaction manager as a bean (XML)
++beans.xml
+<bean class="org.springframework.jdbc.datasource.DataSourceTransactionManager"
+      id="transactionManager">
+    <property name="dataSource" ref="dataSource" />
+</bean>
+=Create a utility class as a bean (for Products) and inject a @@JdbcTemplate@@ into it
++ProductUtils.java
+public class ProductUtils {
+    public void setJdbcTemplate(JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
+    }
+
+    JdbcTemplate jdbcTemplate;
+}
++beans.xml
+<bean class="org.springframework.jdbc.core.JdbcTemplate"
+      id="jdbcTemplate">
+    <property name="dataSource" ref="dataSource" />
+</bean>
+<bean class="com.kciray.play.ProductUtils">
+    <property name="jdbcTemplate" ref="jdbcTemplate" />
+</bean>
+=Create methods in the utility class for performing the following operations (using @@JdbcTemplate@@):
+==Adding a new product to the database (##name## and ##price## specified as parameters)
++ProductUtils.java
+public void addNew(String name, Double price){
+    jdbcTemplate.update("INSERT INTO Product VALUES(?,?)", name, price);
+}
+==Causing @@BadSqlGrammarException@@
++ProductUtils.java
+public void causeAnException(){
+    jdbcTemplate.update("INSERT INTO ProductX");
+}
+==Adding two predefined products and causing an exception between these operations
++ProductUtils.java
+public void addTwo(){
+    addNew("Keyboard", 3.12);
+    causeAnException();
+    addNew("Tablet", 32.3);
+}
+==Printing all products to the console
++ProductUtils.java
+public void print(){
+    for(Map<String, Object> m : jdbcTemplate.queryForList("SELECT * FROM Product")){
+        System.out.println(m.get("name") + " " + m.get("price"));
+    }
+}
+=Ensure the utility class works (from @@Main@@)
+==Get the bean from the context
++Main.java
+@Autowired
+ApplicationContext context;
+public void run(String... strings) throws Exception {
+    ProductUtils productUtils = context.getBean(ProductUtils.class);
+}
+==Add two predefined products and handle the exception
++Main.java
+try{
+    productUtils.addTwo();
+}catch (BadSqlGrammarException gr){
+    System.out.println(gr);
+}
+==Print all rows to the console
++Main.java
+productUtils.print();//Keyboard 3.12 (only one row was persisted)
+==Print the runtime class of the utility class to the console
++Main.java
+System.out.println(productUtils.getClass());//class com.kciray.play.ProductUtils
+=Make the method that add two products transactional in XML
+==Add a namespace for transactions
++beans.xml
+<beans xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="... http://www.springframework.org/schema/tx
+       http://www.springframework.org/schema/tx/spring-tx.xsd">
+</beans>
+==Create a transactional advice for the method
++beans.xml
+<tx:advice id="txAdvice" transaction-manager="transactionManager">
+    <tx:attributes>
+        <tx:method name="addTwo"/>
+    </tx:attributes>
+</tx:advice>
+==Add support for aspect-oriented programming (spring dependency + namespace)
++pom.xml
+<dependency>
+    <groupId>org.springframework</groupId>
+    <artifactId>spring-aspects</artifactId>
+    <version>5.0.2.RELEASE</version>
+</dependency>
++beans.xml
+<beans http://www.springframework.org/schema/aop
+       xsi:schemaLocation="... http://www.springframework.org/schema/aop
+       http://www.springframework.org/schema/aop/spring-aop.xsd">
+</beans>
+==Add AOP configuration with a pointcut (execution) and link it with transactional advice
++beans.xml
+<aop:config>
+    <aop:pointcut id="addTwo" expression="execution(* com.kciray.play.ProductService.addTwo())"/>
+    <aop:advisor advice-ref="txAdvice" pointcut-ref="addTwo"/>
+</aop:config>
+=Ensure transactions work
+==Check if no products was printed to the console (##Atomicity## from ##A##CID works)
++Explanation
+Transaction is "all or nothing." The exception caused a rollback for "Keyboard" row
+==Check if the utility class was enhanced (wrapped with proxy)
++Main.java
+System.out.println(productUtils.getClass());//ProductUtils$$EnhancerBySpringCGLIB$$858f5050
+//Transactions work on Spring AOP
+==Comment out the line that cause the exception and check the result
++ProductUtils.java
+public void addTwo(){
+        addNew("Keyboard", 3.12);
+        //causeAnException();
+        addNew("Tablet", 32.3);
+}
+/*
+Keyboard 3.12
+Tablet 32.3
+*/
+=Remove AOP config and make the method works with @@@Transactional@@ annotation
++beans.xml
+<tx:annotation-driven transaction-manager="transactionManager" />
++ProductUtils.java
+@Transactional
+public void addTwo(){

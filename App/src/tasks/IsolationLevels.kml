@@ -1,0 +1,253 @@
+###name = Isolation levels
+###time = 30
+###full = IsolationLevels.zip
+=Create a spring-based modern application
+==Create a Java project from scratch using your favorite IDE
++<<MainEmpty
+==Add ##maven## support to it
+==Annotate class @@Main@@ as a configuration (with automatic scan)
++<<spring-context
++<<MainConfiguration
+==Create a ##run## method inside the @@Main@@ class
++Main.java
+void run(){
+
+}
+==Create a new context and call @@Main.run()@@
++Main.java
+public static void main(String[] args){
+    AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(Main.class);
+    context.getBean(Main.class).run();
+}
+=Create a datasource as a @@@Bean@@ based on Apache Derby database (use builder)
++pom.xml
+<dependency>
+    <groupId>org.springframework</groupId>
+    <artifactId>spring-jdbc</artifactId>
+    <version>5.0.2.RELEASE</version>
+</dependency>
++<<derby
++Main.java
+@Bean
+DataSource dataSource(){
+    return new EmbeddedDatabaseBuilder().setType(EmbeddedDatabaseType.DERBY).build();
+}
+=Create a @@JdbcTemplate@@ as a @@@Bean@@ with @@DataSource@@ injected into it
++Main.java
+@Bean
+JdbcTemplate getJdbcTemplate(DataSource dataSource){
+    return new JdbcTemplate(dataSource);
+}
+=Create a datasource-based transaction manager as a bean
++Main.java
+@Bean
+PlatformTransactionManager getTransactionManager(DataSource dataSource){
+    return new DataSourceTransactionManager(dataSource);
+}
+=Create a utility class @@CounterUtils@@ and wire it into the main class
++CounterUtils.java
+@Component
+public class CounterUtils {
+
+}
++Main.java
+@Autowired
+CounterUtils counterUtils;
+=Create init method that executes inside a transaction
+==Enables Spring's annotation-driven transaction management capability
++Main.java
+@EnableTransactionManagement //<=
+public class Main{
+    //...
+}
+==Create init method inside the utility class and annotate it as transactional
++CounterUtils.java
+@Transactional
+public void init(){
+
+}
+==Call the init method from the main class
++Main.java
+void run(){
+    counterUtils.init();
+}
+=Perform the following operations inside the init method
+==Retrieving the default isolation level (from @@Connection@@) and printing it
++CounterUtils.java
+@Autowired
+JdbcTemplate jdbcTemplate;
++CounterUtils.java
+try {
+    Connection connection = jdbcTemplate.getDataSource().getConnection();
+    System.out.println("default isolation is " + connection.getTransactionIsolation());
+    //2 = Connection.TRANSACTION_READ_COMMITTED
+} catch (SQLException e) {
+    e.printStackTrace();
+}
+==Creating table ##Counter## with one column (int ##num##)
++CounterUtils.java
+jdbcTemplate.execute("CREATE TABLE Counter(num INTEGER)");
+==Inserting a small value into ##Counter##
++CounterUtils.java
+jdbcTemplate.update("INSERT INTO Counter(num) values (5)");
+=Run the application and ensure that
+==There are no errors
+==Printed isolation level is equal to ##read committed##
++CounterUtils.java
+//2 = Connection.TRANSACTION_READ_COMMITTED
+=Preparations
+==Inject the utility bean into itself (ref to the proxy)
++CounterUtils.java
+@Autowired
+CounterUtils self;//CounterUtils$$EnhancerBySpringCGLIB
+==Set property ##derby.locks.waitTimeout## to one second (globally)
++Main.java
+public static void main(String[] args) {
+    System.getProperties().put("derby.locks.waitTimeout", "1");
+    //Derby can't retrieve properties from application.properties for some reasons
+    //And @Transaction/TransactionManager timeouts don't work either
+    
+    AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(Main.class);
+    context.getBean(Main.class).run();
+}
+=Dirty reads
+==Create a transactional method ##dirtyReads##
++CounterUtils.java
+@Transactional
+public void dirtyReads(){
+
+}
+==Update ##num## (from ##Counter## table) to some new value
++CounterUtils.java
+jdbcTemplate.update("UPDATE Counter SET num = 10");
+System.out.println("value was updated to 10");
+==Create a transactional method ##readFromAnotherTransaction## and call it from ##dirtyReads## (using proxy)
++CounterUtils.java
+@Transactional
+public void readFromAnotherTransaction(){
+
+}
++CounterUtils.java
+@Transactional
+public void dirtyReads(){
+    jdbcTemplate.update("UPDATE Counter SET num = 10");
+    System.out.println("value was updated to 10");
+
+    self.readFromAnotherTransaction();//<==
+}
+==Set the lowest isolation level and make it executes in a new transaction
++CounterUtils.java
+@Transactional(isolation = Isolation.READ_UNCOMMITTED, propagation = Propagation.REQUIRES_NEW)
+public void readFromAnotherTransaction(){
+
+}
+==Read ##num## and print it to the console
++CounterUtils.java
+int num = jdbcTemplate.queryForObject("SELECT num FROM Counter", Integer.class);
+System.out.println("dirty read " + num);//dirty read 10 OR CannotAcquireLockException
+==Call ##dirtyReads## from the main class and handle @@CannotAcquireLockException@@
++Main.java
+try {
+    counterUtils.dirtyReads();
+}catch (CannotAcquireLockException exception){
+    System.out.println("---Can't acquire lock for dirtyReads!---");
+}
+==Run the application and ensure that dirty read works (number is printed)
+==Change the isolation level to more restrictive (that prevent dirty reads)
++CounterUtils.java
+@Transactional(isolation = Isolation.READ_COMMITTED, propagation = Propagation.REQUIRES_NEW)
+public void readFromAnotherTransaction(){
+    //..
+}
+==Run the application and ensure that @@CannotAcquireLockException@@ prevented the dirty read (##Isolation## from AC##I##D works)
+=Repeatable reads
+==Create a transactional method ##changeFromAnotherTransaction## and make it create a new transaction whenever it is called
++CounterUtils.java
+@Transactional(propagation = Propagation.REQUIRES_NEW)
+public void changeFromAnotherTransaction(){
+
+}
+==Update ##num## inside it to some new value
++CounterUtils.java
+System.out.println("value was updated to 20");
+jdbcTemplate.update("UPDATE Counter SET num = 20");
+==Create a transactional method ##repeatableReads##
++CounterUtils.java
+@Transactional
+public void repeatableReads(){
+
+}
+==Retrieve ##num## from the table and print it to the console
++CounterUtils.java
+int num = jdbcTemplate.queryForObject("SELECT num from Counter", Integer.class);
+System.out.println("before: " + num);
+==Call ##changeFromAnotherTransaction## using proxy of the utility class
++CounterUtils.java
+self.changeFromAnotherTransaction();
+==Retrieve ##num## from the table and print it to the console (this is repeatable read)
++CounterUtils.java
+num = jdbcTemplate.queryForObject("SELECT num from Counter", Integer.class);
+System.out.println("after: " + num);
+==Call ##repeatableReads## from the main class and handle @@CannotAcquireLockException@@
++Main.java
+void run(){
+    //...
+    try {
+        counterUtils.repeatableReads();
+    }catch (CannotAcquireLockException exception){
+        System.out.println("---Can't acquire lock for repeatableReads!---");
+    }
+}
+==Run the application and ensure that repeatable read doesn't work (numbers "before" and "after" are different)
+==Change the isolation level to the one that ensures repeatable reads (on ##repeatableReads## method)
++CounterUtils.java
+//Change between READ_COMMITTED/REPEATABLE_READ to see the difference
+@Transactional(isolation = Isolation.REPEATABLE_READ)
+public void repeatableReads(){
+    //...
+}
+==Run the application and ensure that @@CannotAcquireLockException@@ prevented the inconsistency between the same reads
+=Phantom reads
+==Create transactional method ##insertFromAnotherTransaction## and make it create a new transaction whenever it is called
++CounterUtils.java
+@Transactional(propagation = Propagation.REQUIRES_NEW)
+public void insertFromAnotherTransaction(){
+
+}
+==Insert some new row into the ##Counter## table
++CounterUtils.java
+jdbcTemplate.update("INSERT INTO Counter(num) VALUES (80)");
+System.out.println("a new row was inserted");
+==Create a transactional method ##phantomReads## with isolation level that ensure repeatable reads, but allow phantom reads
++CounterUtils.java
+@Transactional(isolation = Isolation.REPEATABLE_READ)
+public void phantomReads(){
+
+}
+==Retrieve the number of the rows from the ##Counter## table and print it
++CounterUtils.java
+int count = jdbcTemplate.queryForObject("SELECT COUNT(*) from Counter", Integer.class);
+System.out.println("counter before is " + count);
+==Call method ##insertFromAnotherTransaction## using proxy
++CounterUtils.java
+self.insertFromAnotherTransaction();
+==Retrieve the number of the rows from the ##Counter## table and print it (one more time)
++CounterUtils.java
+int count = jdbcTemplate.queryForObject("SELECT COUNT(*) from Counter", Integer.class);
+System.out.println("counter before is " + count);
+==Call ##phantomReads## from the main class and handle @@CannotAcquireLockException@@
++Main.java
+try {
+    counterUtils.phantomReads();
+}catch (CannotAcquireLockException exception){
+    System.out.println("---Can't acquire lock for phantomReads!---");
+}
+==Run the application and ensure that phantom reads occured (number of retrieved rows is different before and after the insertion)
+==Change the isolation level to the one that prevents phantom reads
++CounterUtils.java
+//Change between REPEATABLE_READ/SERIALIZABLE to see the difference
+@Transactional(isolation = Isolation.SERIALIZABLE)
+public void phantomReads(){
+    //...
+}
+==Run the application and ensure that @@CannotAcquireLockException@@ prevented phantom reads

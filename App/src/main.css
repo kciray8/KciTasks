@@ -1,0 +1,64 @@
+body.mainBody{
+    margin: 10px auto auto;
+    max-width: 1100px;
+    min-width: 1100px;
+}
+
+.navbar{
+    margin-bottom: 10px;
+}
+
+.complex-task{
+    margin-bottom: 10px;
+}
+
+.h1, h1 {
+    font-size: 1.5rem;
+}
+
+.caption{
+    font-style: italic;
+}
+.fileName{
+    font-style: italic;
+}
+
+.solution{
+    display: none;
+}
+code{
+    white-space: pre;
+}
+
+.btn-solution{
+    border: 0;
+}
+
+.solution{
+    margin-left: 10px;
+}
+
+th span.type{
+    font-weight: lighter
+}
+
+.term{
+    color: mediumblue;
+    font-weight: bold;
+}
+.cls{
+    color: #8720b1;
+    font-weight: bold;
+}
+.method{
+    color: #4d7143;
+    font-style: italic;
+    font-weight: bold;
+}
+.file{
+    color: #175c71;
+    font-weight: bold;
+}
+ol > li > ul > li {
+    list-style-type: lower-alpha;
+}

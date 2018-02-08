@@ -1,0 +1,4 @@
+1) It's impossible to produce phantom reads using MySQL (https://stackoverflow.com/questions/5444915/how-to-produce-phantom-reads)
+2) H2 doesn't reproduce the difference between COMMITED and UNCOMMITED (and don't block, just return the saved copy)
+3) MySQL doesn't block COMMITED, just return the saved copy
+4) It's not necessary to create parallel threads (we can use propagation levels)

@@ -1,0 +1,107 @@
+###name = (Extra) NoSQL database
+###time = 5
+###full = NoSQL.zip
+=Create a spring-based modern application
+==Create a Java project from scratch using your favorite IDE
++<<MainEmpty
+==Add ##maven## support to it
+==Annotate class @@Main@@ as a configuration (with automatic scan)
++<<spring-context
++<<MainConfiguration
+==Create a !!run!! method inside the @@Main@@ class
++Main.java
+void run(){
+
+}
+==Create a new context and call @@Main.run()@@
++Main.java
+public static void main(String[] args){
+    AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(Main.class);
+    context.getBean(Main.class).run();
+}
+=Add a dependency to embed mongo (##de.flapdoodle.embed.mongo##)
++pom.xml
+<dependency>
+    <groupId>de.flapdoodle.embed</groupId>
+    <artifactId>de.flapdoodle.embed.mongo</artifactId>
+    <version>2.0.0</version>
+</dependency>
+=Create a !!startServer!! static method and call it before the context initialization
++Main.java
+public static void startServer(){
+}
++Main.java
+public static void main(String[] args){
+    startServer();
+    AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(Main.class);
+    context.getBean(Main.class).run();
+}
+=Use ##MongodStarter## class to configure and run minimal MongoDB server
++Main.java
+public static void startServer(){
+    try {
+        MongodStarter starter = MongodStarter.getDefaultInstance();
+        IMongodConfig config = new MongodConfigBuilder()
+                .version(Version.Main.PRODUCTION)
+                .net(new Net("localhost", 1234, Network.localhostIsIPv6()))
+                .build();
+        starter.prepare(config).start();
+    }catch (IOException e){
+        System.out.println(e);
+    }
+}
+=Create a mongo client as a @@@Bean@@ (set port accordingly to the server)
++pom.xml
+<dependency>
+    <groupId>org.springframework.data</groupId>
+    <artifactId>spring-data-mongodb</artifactId>
+    <version>2.0.2.RELEASE</version>
+</dependency>
++Main.java
+@Bean
+MongoClient mongoClient(){
+    return new MongoClient("localhost", 1234);
+}
+=Create a special MongoDB template class (from ##spring-data##) as a @@@Bean@@
++Main.java
+@Bean
+MongoTemplate mongoTemplate(MongoClient mongoClient){
+    MongoTemplate template = new MongoTemplate(mongoClient, "db");
+    return template;
+}
+=Create a product class (with fields ##name## and ##price##)
++Product.java
+public class Product {
+    String name;
+    Double price;
+}
+=Insert two distinct products into the database
++Main.java
+@Autowired
+MongoTemplate mongoTemplate;
++Main.java
+void run(){
+    Product product1 = new Product();
+    product1.price = 10.3;
+    product1.name = "Mouse";
+    mongoTemplate.insert(product1);
+
+    Product product2 = new Product();
+    product2.price = 30.3;
+    product2.name = "Tablet";
+    mongoTemplate.insert(product2);
+}
+=Print all collection names to the console
++Main.java
+System.out.println(mongoTemplate.getCollectionNames());//[product]
+=Run the application and ensure that the collection 'product' was printed
+=Query the database with restriction on the price value (between two products)
++Main.java
+List<Product> products = mongoTemplate.find( new BasicQuery("{price: {$gt:15} }"), Product.class);
+//$gt = greater (>)
+=Print the names from the retrieved product list
++Main.java
+for(Product product: products){
+    System.out.println(product.name);
+}
+=Run the application and ensure that the product was chosen according to the restriction

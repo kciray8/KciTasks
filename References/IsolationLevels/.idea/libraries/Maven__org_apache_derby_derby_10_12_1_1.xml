@@ -1,0 +1,34 @@
+<component name="libraryTable">
+  <library name="Maven: org.apache.derby:derby:10.12.1.1">
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/org/apache/derby/derby/10.12.1.1/derby-10.12.1.1.jar!/" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$MAVEN_REPOSITORY$/org/apache/derby/derby/10.12.1.1/derby-10.12.1.1-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$MAVEN_REPOSITORY$/org/apache/derby/derby/10.12.1.1/derby-10.12.1.1-sources.jar!/" />
+      <root url="jar://$USER_HOME$/Downloads/db-derby-10.11.1.1-src.zip!/db-derby-10.11.1.1-src/java/build" />
+      <root url="jar://$USER_HOME$/Downloads/db-derby-10.11.1.1-src.zip!/db-derby-10.11.1.1-src/java/client" />
+      <root url="jar://$USER_HOME$/Downloads/db-derby-10.11.1.1-src.zip!/db-derby-10.11.1.1-src/java/demo" />
+      <root url="jar://$USER_HOME$/Downloads/db-derby-10.11.1.1-src.zip!/db-derby-10.11.1.1-src/java/demo/scores/java/client" />
+      <root url="jar://$USER_HOME$/Downloads/db-derby-10.11.1.1-src.zip!/db-derby-10.11.1.1-src/java/demo/scores/java/common" />
+      <root url="jar://$USER_HOME$/Downloads/db-derby-10.11.1.1-src.zip!/db-derby-10.11.1.1-src/java/demo/scores/java/server" />
+      <root url="jar://$USER_HOME$/Downloads/db-derby-10.11.1.1-src.zip!/db-derby-10.11.1.1-src/java/demo/simple" />
+      <root url="jar://$USER_HOME$/Downloads/db-derby-10.11.1.1-src.zip!/db-derby-10.11.1.1-src/java/demo/vtis/java" />
+      <root url="jar://$USER_HOME$/Downloads/db-derby-10.11.1.1-src.zip!/db-derby-10.11.1.1-src/java/drda" />
+      <root url="jar://$USER_HOME$/Downloads/db-derby-10.11.1.1-src.zip!/db-derby-10.11.1.1-src/java/engine" />
+      <root url="jar://$USER_HOME$/Downloads/db-derby-10.11.1.1-src.zip!/db-derby-10.11.1.1-src/java/optional" />
+      <root url="jar://$USER_HOME$/Downloads/db-derby-10.11.1.1-src.zip!/db-derby-10.11.1.1-src/java/shared" />
+      <root url="jar://$USER_HOME$/Downloads/db-derby-10.11.1.1-src.zip!/db-derby-10.11.1.1-src/java/storeless" />
+      <root url="jar://$USER_HOME$/Downloads/db-derby-10.11.1.1-src.zip!/db-derby-10.11.1.1-src/java/stubs/felix" />
+      <root url="jar://$USER_HOME$/Downloads/db-derby-10.11.1.1-src.zip!/db-derby-10.11.1.1-src/java/stubs/jdbc4" />
+      <root url="jar://$USER_HOME$/Downloads/db-derby-10.11.1.1-src.zip!/db-derby-10.11.1.1-src/java/testing" />
+      <root url="jar://$USER_HOME$/Downloads/db-derby-10.11.1.1-src.zip!/db-derby-10.11.1.1-src/java/tools" />
+      <root url="jar://$USER_HOME$/Downloads/db-derby-10.11.1.1-src.zip!/db-derby-10.11.1.1-src/maven2" />
+      <root url="jar://$USER_HOME$/Downloads/db-derby-10.11.1.1-src.zip!/db-derby-10.11.1.1-src/plugins/eclipse/org.apache.derby.ui/src" />
+      <root url="jar://$USER_HOME$/Downloads/db-derby-10.11.1.1-src.zip!/db-derby-10.11.1.1-src/tools/l10n" />
+      <root url="jar://$USER_HOME$/Downloads/db-derby-10.11.1.1-src.zip!/db-derby-10.11.1.1-src/tools/release/jirasoap/src/main/java" />
+    </SOURCES>
+  </library>
+</component>

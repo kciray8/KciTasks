@@ -1,0 +1,75 @@
++pom.xml==spring-boot-starter-web
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-web</artifactId>
+    <version>2.0.0.M7</version>
+</dependency>
++pom.xml==spring-context
+<dependency>
+    <groupId>org.springframework</groupId>
+    <artifactId>spring-context</artifactId>
+    <version>5.0.2.RELEASE</version>
+</dependency>
++Main.java==MainEmpty
+package com.kciray.play;
+
+public class Main {
+
+    public static void main(String[] args) {
+        // write your code here
+    }
+}
++Main.java==MainConfiguration
+@Configuration
+@ComponentScan
+public class Main{
+    public static void main(String[] args){
+    }
+}
++Main.java==Main.java
+@SpringBootApplication
+@ImportResource("beans.xml")
+public class Main implements CommandLineRunner{
+    public static void main(String[] args) {
+        SpringApplication.run(Main.class);
+    }
+
+    public void run(String... strings) throws Exception {
+
+    }
+}
++Main.java==ModernMain.java
+@SpringBootApplication
+public class Main implements CommandLineRunner{
+    public static void main(String[] args) {
+        SpringApplication.run(Main.class);
+    }
+
+    public void run(String... strings) throws Exception {
+
+    }
+}
++beans.xml==beans.xml
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+       http://www.springframework.org/schema/beans/spring-beans-4.3.xsd">
+
+</beans>
++pom.xml==derby
+<dependency>
+    <groupId>org.apache.derby</groupId>
+    <artifactId>derby</artifactId>
+    <version>10.12.1.1</version>
+</dependency>
++pom.xml==h2
+<dependency>
+    <groupId>com.h2database</groupId>
+    <artifactId>h2</artifactId>
+    <version>1.4.196</version>
+</dependency>
++pom.xml==spring-jdbc
+<dependency>
+    <groupId>org.springframework</groupId>
+    <artifactId>spring-jdbc</artifactId>
+    <version>5.0.2.RELEASE</version>
+</dependency>

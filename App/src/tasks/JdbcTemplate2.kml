@@ -1,0 +1,121 @@
+###name=Jdbc template and datasource part 2
+###full = JdbcTemplate2.zip
+=Create a spring-based modern application
+==Create a Java project from scratch using your favorite IDE
++<<MainEmpty
+==Add ##maven## support to it
+==Annotate class @@Main@@ as a configuration (with automatic scan)
++<<spring-context
++<<MainConfiguration
+==Create a ##run## method inside the @@Main@@ class
++Main.java
+void run(){
+
+}
+==Create a new context and call @@Main.run()@@
++Main.java
+public static void main(String[] args){
+    AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(Main.class);
+    context.getBean(Main.class).run();
+}
+=Add Apache Derby as a @@@Bean@@ using builder (embedded)
++<<derby
++<<spring-jdbc
++Main.java
+@Bean
+public DataSource dataSource(){
+    return new EmbeddedDatabaseBuilder().setType(EmbeddedDatabaseType.DERBY).build();
+}
+=Create @@JdbcTemplate@@ as a @@@Bean@@ and inject @@DataSource@@ into it
++Main.java
+@Bean
+public JdbcTemplate jdbcTemplate(DataSource dataSource){
+    return new JdbcTemplate(dataSource);
+}
+=Retrieve the url from ##JdbcTemplate## and print it to the console
++Main.java
+@Autowired
+JdbcTemplate jdbcTemplate;
++Main.java
+void run(){
+    String url = jdbcTemplate.execute((ConnectionCallback<String>) con -> con.getMetaData().getURL());
+    System.out.println(url);
+}
+=Run the application and ensure that the url contains "derby"
++Output
+jdbc:derby:memory:testdb
+=Create a file ~~schema.sql~~ with a DDL-statement for creating a new table ##Product## (name, price)
++schema.sql
+CREATE TABLE Product(name VARCHAR(100), price DOUBLE)
+=Create a file ~~test-data.sql~~ with a few DML-statements that insert distinct products
++test-data.sql
+INSERT INTO Product VALUES('Milk', 3.5)
+INSERT INTO Product VALUES('Eggs', 6)
+=Inject ~~schema.sql~~ and ~~test-data.sql~~ into the ##Main## class as spring-resources
++Main.java
+@Value("schema.sql")
+Resource schema;
+
+@Value("test-data.sql")
+Resource testData;
+=Create a resource-based database populator and use it to init the database
++Main.java
+ResourceDatabasePopulator populator = new ResourceDatabasePopulator();
+populator.addScript(schema);
+populator.addScript(testData);
+
+DataSourceInitializer initializer = new DataSourceInitializer();
+initializer.setDatabasePopulator(populator);
+DatabasePopulatorUtils.execute(populator, dataSource);
+=Retrive the names of the products to a list and print it
++Main.java
+List<String> productNames = jdbcTemplate.queryForList("SELECT name FROM Product", String.class);
+System.out.println(productNames);
+=Run the application and ensure that the names of the products were printed accordingly with ~~test-data.sql~~
++Output
+[Milk, Eggs]
+=Create a domain object @@Product@@ (with custom !!toString!!)
++Product.java
+public class Product {
+    String name;
+    Double price;
+
+    @Override
+    public String toString() {
+        return "Product{" +
+                "name='" + name + '\'' +
+                ", price=" + price +
+                '}';
+    }
+}
+=Retrieve a @@List<Product>@@ using a row mapper and print it
++Main.java
+List<Product> products = jdbcTemplate.query("SELECT * FROM Product", (RowMapper<Product>) (rs, rowNum) -> {
+    Product product = new Product();
+    product.name = rs.getString("name");
+    product.price = rs.getDouble("price");
+    return product;
+});
+System.out.println(products);
+=Create a class with name @@ProductSet@@ that has a list of products as its member
++ProductSet.java
+public class ProductSet {
+    public List<Product> products = new ArrayList<>();
+}
+=Retrieve a @@ProductSet@@ using a result set extractor and print its products
++Main.java
+ProductSet productSet = jdbcTemplate.query("SELECT * FROM Product", (ResultSetExtractor<ProductSet>) rs->{
+    ProductSet set = new ProductSet();
+    while (rs.next()){
+        Product product = new Product();
+        product.name = rs.getString("name");
+        product.price = rs.getDouble("price");
+        set.products.add(product);
+    };
+    return set;
+});
+System.out.println(productSet.products);
+=Run the application and ensure that the products was printed correctly (two times)
++Output
+[Product{name='Milk', price=3.5}, Product{name='Eggs', price=6.0}]
+[Product{name='Milk', price=3.5}, Product{name='Eggs', price=6.0}]

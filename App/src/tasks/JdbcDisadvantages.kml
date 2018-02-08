@@ -1,0 +1,47 @@
+###name=Plain Jdbc disadvantages
+###time = 5
+###full = JdbcConnection.zip
+=Create a Java project from scratch using your favorite IDE
++<<MainEmpty
+=Add ##maven## to it
+=Add H2 database to maven dependencies
++<<h2
+=Retrieve a connection from h2 (in-memory mode) using @@DriverManager@@
++Main.java
+try {//flaw 1: checked exceptions
+    Connection connection = DriverManager.getConnection("jdbc:h2:mem:test","sa","");
+} catch (SQLException e) {
+    e.printStackTrace();
+}
+=Create table ##Person## with ##id## (int) and ##name## (String)
++Main.java
+Statement statement = connection.createStatement();
+statement.execute("CREATE TABLE Person(id INTEGER, name VARCHAR)");
+=Insert two distinct rows into the ##Person## table
++Main.java
+statement.execute("INSERT INTO Person VALUES (0, 'Lily')");
+statement.execute("INSERT INTO Person VALUES (1, 'Robin')");
+=Retrieve all the rows and print them to the console
++Main.java
+ResultSet resultSet = statement.executeQuery("SELECT * FROM Person");
+while (resultSet.next()){
+    System.out.println(resultSet.getString("name"));
+}
+=Run the application and ensure the rows are printed
+=Cause "Syntax error" exception and handle it
++Main.java
+try {
+    statement.execute("CREATE TALE");
+}catch (SQLException e){//flaw 2: no specific exceptions
+    e.printStackTrace();
+}
+=Close all the objects that should be closed
++Main.java
+//flaw 3: redundant close() statements
+resultSet.close();
+statement.close();
+connection.close();
+=Print the connection status to the console (closed/not closed)
++Main.java
+System.out.println(connection.isClosed());
+=Run the application and ensure that the connection was closed
